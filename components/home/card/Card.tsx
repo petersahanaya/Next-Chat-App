@@ -7,6 +7,7 @@ import { GoPrimitiveDot } from "react-icons/go";
 import CardLoading from "./Loading";
 import Images from "@images";
 import { BASEURL } from "@/lib/url";
+import { useSession } from "next-auth/react";
 
 const fetcher: Fetcher<{ users: UserType[] }> = async (url: string) => {
   const res = await fetch(url);
@@ -15,9 +16,11 @@ const fetcher: Fetcher<{ users: UserType[] }> = async (url: string) => {
 
 const Card = () => {
   const dispatcher = useContext(GlobalContext);
+  const { data : session } = useSession()
+  const query = dispatcher?.state.isActive.people ? "/api/users" : `/api/friend?userId=${session?.user.id}`
 
   const { data: Users, isLoading } = useSWR(
-    `${BASEURL + "/api/users"}`,
+    `${BASEURL + query}`,
     fetcher
   );
 
@@ -27,13 +30,12 @@ const Card = () => {
 
   return (
     <main>
-      {dispatcher!.state.isActive.people && (
         <>
           <div className="pb-3 px-4 flex justify-start gap-3 items-center">
             <span className="text-green-500">
               <GoPrimitiveDot size={20} />
             </span>
-            <p className="text-stone-300">online</p>
+            <p className="text-stone-300">{dispatcher?.state.isActive.people ? "Stranger's" : "Friend's"}</p>
           </div>
           {Users?.users.map((user, i) => (
             <Link key={i} href={`/user/${user.userId}`}>
@@ -66,7 +68,6 @@ const Card = () => {
             </Link>
           ))}
         </>
-      )}
     </main>
   );
 };
